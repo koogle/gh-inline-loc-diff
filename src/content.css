@@ -209,3 +209,7 @@ button.locdiff-hot-name:hover { color: var(--fgColor-accent, #0969da); text-deco
   --locdiff-heat: 0;
   box-shadow: inset 4px 0 0 hsl(calc(52 - var(--locdiff-heat) * 52) 95% 52% / calc(.3 + var(--locdiff-heat) * .7)) !important;
 }
+
+/* Badge placed inside GitHub's trailing (diff status icon) slot */
+.locdiff-badge.locdiff-badge--in-trailing { margin-left: 0; padding-left: 0; margin-right: 6px; grid-area: auto; }
+.ActionList-item-visual--trailing:has(> .locdiff-badge) { display: inline-flex; align-items: center; width: auto; }

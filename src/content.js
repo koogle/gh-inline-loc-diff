@@ -116,9 +116,13 @@
 
   /** The row element of a tree item (excludes its nested sub-tree). */
   function rowOf(li) {
+    // GitHub's classic tree: <li> holds a hidden <span data-filterable-item-text hidden> before the real row.
+    const known = li.querySelector(':scope > .ActionList-content, :scope > [class*="TreeView-item-container"], :scope > [class*="TreeViewItemContainer"]');
+    if (known) return known;
     for (const child of li.children) {
       if (child.getAttribute('role') === 'group' || child.tagName === 'UL') continue;
       if (child.classList.contains(`${NS}-badge`)) continue;
+      if (child.hidden || child.hasAttribute('data-filterable-item-text') || child.tagName === 'TEMPLATE') continue;
       return child;
     }
     return li;
@@ -258,12 +262,19 @@
       // --- badge
       const labelEl = labelElOf(row);
       const host = (labelEl && labelEl.parentElement) || row;
-      let badge = host.querySelector(`:scope > .${NS}-badge`);
+      // GitHub puts the added/modified/removed icon in the trailing slot; sit right before it.
+      const trailing = host.querySelector(':scope > .ActionList-item-visual--trailing, :scope > [class*="TrailingVisual"], :scope > [class*="trailing-visual"]');
+      let badge = row.querySelector(`.${NS}-badge`);
       if (settings.badges) {
         const text = badgeText(node);
         if (!badge) {
           badge = el('span', `${NS}-badge`);
           badge.append(el('span', `${NS}-add`), el('span', `${NS}-del`));
+        }
+        if (trailing) {
+          if (trailing.firstElementChild !== badge) trailing.prepend(badge);
+          badge.classList.add(`${NS}-badge--in-trailing`);
+        } else if (badge.parentElement !== host) {
           host.appendChild(badge);
         }
         const [a, d] = badge.children;

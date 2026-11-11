@@ -41,8 +41,9 @@ const sha = (s) => crypto.createHash('sha256').update(s).digest('hex');
   await page.waitForTimeout(400);
 
   const badges = await page.$$eval('[role="treeitem"]', (items) => items.map((li) => {
-    const row = [...li.children].find((c) => c.tagName !== 'UL');
+    const row = [...li.children].find((c) => c.tagName !== 'UL' && !c.hidden);
     const b = row.querySelector('.locdiff-badge');
+    if (b && !b.offsetParent) return { label: 'HIDDEN BADGE', badge: null, heat: '' };
     const label = row.querySelector('.ActionList-item-label, .PRIVATE_TreeView-item-content-text, [class*="TreeViewItemContentText"]');
     return { label: label.firstChild.textContent.trim(), badge: b ? b.textContent : null, heat: row.style.getPropertyValue('--locdiff-heat') };
   }));
