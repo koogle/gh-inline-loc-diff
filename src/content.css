@@ -18,30 +18,38 @@
 .locdiff-add { color: var(--fgColor-success, var(--color-success-fg, #1a7f37)); }
 .locdiff-del { color: var(--fgColor-danger, var(--color-danger-fg, #d1242f)); }
 
-/* ---------- heatmap on tree rows ---------- */
+/* ---------- heatmap on tree rows: green = additions, red = removals ---------- */
+/* --locdiff-heat: 0..1 how much changed;  --locdiff-add: 0..1 share of the change that is additions */
 .locdiff-heat {
   --locdiff-heat: 0;
-  --locdiff-heat-color: hsl(calc(52 - var(--locdiff-heat) * 52) 95% 52%);
+  --locdiff-add: .5;
+  --locdiff-green: var(--fgColor-success, #1a7f37);
+  --locdiff-red: var(--fgColor-danger, #d1242f);
+  --locdiff-alpha: calc(10% + var(--locdiff-heat) * 30%);
+  --locdiff-split: calc(var(--locdiff-add) * 100%);
   background-image: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--locdiff-heat-color) calc(8% + var(--locdiff-heat) * 34%), transparent) 0 100%
+    color-mix(in srgb, var(--locdiff-green) var(--locdiff-alpha), transparent) 0 var(--locdiff-split),
+    color-mix(in srgb, var(--locdiff-red) var(--locdiff-alpha), transparent) var(--locdiff-split) 100%
   ) !important;
-  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--locdiff-heat-color) calc(25% + var(--locdiff-heat) * 75%), transparent);
+  box-shadow: inset 3px 0 0 color-mix(in srgb,
+    color-mix(in srgb, var(--locdiff-green) var(--locdiff-split), var(--locdiff-red))
+    calc(30% + var(--locdiff-heat) * 70%), transparent);
 }
-.locdiff-heat.locdiff-heat--dir {
+.locdiff-heat.locdiff-heat--dir { --locdiff-alpha: calc(5% + var(--locdiff-heat) * 18%); }
+/* Bar style: total width = how much changed, split green/red by additions vs removals */
+.locdiff-heat.locdiff-heat--bar {
+  --locdiff-alpha: 35%;
+  --locdiff-w: calc(var(--locdiff-heat) * 100%);
+  --locdiff-split: calc(var(--locdiff-heat) * var(--locdiff-add) * 100%);
   background-image: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--locdiff-heat-color) calc(4% + var(--locdiff-heat) * 18%), transparent) 0 100%
+    color-mix(in srgb, var(--locdiff-green) var(--locdiff-alpha), transparent) 0 var(--locdiff-split),
+    color-mix(in srgb, var(--locdiff-red) var(--locdiff-alpha), transparent) var(--locdiff-split) var(--locdiff-w),
+    transparent var(--locdiff-w)
   ) !important;
 }
-.locdiff-heat.locdiff-heat--bar,
-.locdiff-heat.locdiff-heat--bar.locdiff-heat--dir {
-  background-image: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--locdiff-heat-color) 38%, transparent) 0 calc(var(--locdiff-heat) * 100%),
-    transparent calc(var(--locdiff-heat) * 100%)
-  ) !important;
-}
+.locdiff-badge[hidden], .locdiff-badge > [hidden] { display: none !important; }
 
 /* ---------- floating button ---------- */
 .locdiff-fab {
@@ -207,7 +215,10 @@ button.locdiff-hot-name:hover { color: var(--fgColor-accent, #0969da); text-deco
 /* ---------- heat stripe on each diff's file header ---------- */
 .locdiff-file-heat {
   --locdiff-heat: 0;
-  box-shadow: inset 4px 0 0 hsl(calc(52 - var(--locdiff-heat) * 52) 95% 52% / calc(.3 + var(--locdiff-heat) * .7)) !important;
+  --locdiff-add: .5;
+  box-shadow: inset 4px 0 0 color-mix(in srgb,
+    color-mix(in srgb, var(--fgColor-success, #1a7f37) calc(var(--locdiff-add) * 100%), var(--fgColor-danger, #d1242f))
+    calc(30% + var(--locdiff-heat) * 70%), transparent) !important;
 }
 
 /* Badge placed inside GitHub's trailing (diff status icon) slot */

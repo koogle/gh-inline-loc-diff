@@ -16,7 +16,7 @@
   let resolveCache = new WeakMap(); // treeitem element -> { sig, node }
   let pathToItem = new Map(); // file path -> tree item element (for navigation)
   let scheduled = false;
-  let panelColorMode = 'heat';
+  let panelColorMode = 'ratio';
 
   function freshState(key) {
     return { key, info: null, status: 'idle', error: null, source: null, model: null, hashToPath: new Map(), pathToHash: new Map() };
@@ -278,10 +278,14 @@
           host.appendChild(badge);
         }
         const [a, d] = badge.children;
-        const at = `+${L.formatCount(node.additions)}`;
-        const dt = `−${L.formatCount(node.deletions)}`;
+        // Zero counts are noise: only show the parts that changed.
+        const at = node.additions ? `+${L.formatCount(node.additions)}` : '';
+        const dt = node.deletions ? `−${L.formatCount(node.deletions)}` : '';
         if (a.textContent !== at) a.textContent = at;
         if (d.textContent !== dt) d.textContent = dt;
+        a.hidden = !at;
+        d.hidden = !dt;
+        badge.hidden = !at && !dt;
         const title = `${node.isDir ? `${node.fileCount} files, ` : ''}${node.additions} additions, ${node.deletions} deletions`;
         if (badge.title !== title) badge.title = title;
         badge.dataset.text = text;
@@ -296,6 +300,8 @@
         row.classList.toggle(`${NS}-heat--bar`, settings.heatStyle === 'bar');
         row.classList.toggle(`${NS}-heat--dir`, node.isDir);
         if (row.style.getPropertyValue('--locdiff-heat') !== t) row.style.setProperty('--locdiff-heat', t);
+        const r = addShare(node);
+        if (row.style.getPropertyValue('--locdiff-add') !== r) row.style.setProperty('--locdiff-add', r);
       } else if (row.classList.contains(`${NS}-heat`)) {
         clearHeat(row);
       }
@@ -309,9 +315,16 @@
   }
   let lastDiag = '';
 
+  /** Share of the change that is additions, 0..1 (as a string for a CSS variable). */
+  function addShare(node) {
+    const total = L.churn(node);
+    return (total ? node.additions / total : 0.5).toFixed(3);
+  }
+
   function clearHeat(row) {
     row.classList.remove(`${NS}-heat`, `${NS}-heat--bar`, `${NS}-heat--dir`);
     row.style.removeProperty('--locdiff-heat');
+    row.style.removeProperty('--locdiff-add');
   }
 
   function undecorate(li, row) {
@@ -349,7 +362,7 @@
     if (state.status === 'error') { text = 'LOC: error'; title = state.error; }
     if (state.status === 'ready') {
       const t = state.model.totals;
-      text = `+${L.formatCount(t.additions)} −${L.formatCount(t.deletions)} · heatmap`;
+      text = `${[t.additions ? `+${L.formatCount(t.additions)}` : '', t.deletions ? `−${L.formatCount(t.deletions)}` : ''].filter(Boolean).join(' ')} · heatmap`;
     }
     if (button.textContent !== text) button.textContent = text;
     button.title = title;
@@ -440,7 +453,7 @@
 
     // color-mode toggle
     const modes = el('div', `${NS}-seg`);
-    for (const [mode, label] of [['heat', 'Churn'], ['ratio', 'Added vs deleted']]) {
+    for (const [mode, label] of [['ratio', 'Added vs deleted'], ['heat', 'Churn']]) {
       const b = el('button', mode === panelColorMode ? 'is-active' : '', label);
       b.type = 'button';
       b.addEventListener('click', () => { panelColorMode = mode; renderPanel(); });
@@ -514,11 +527,9 @@
     summary.append(el('span', `${NS}-inline-title`, 'Change heatmap'));
     if (state.status === 'ready') {
       const t = state.model.totals;
-      summary.append(
-        el('span', `${NS}-add`, `+${L.formatCount(t.additions)}`),
-        el('span', `${NS}-del`, `−${L.formatCount(t.deletions)}`),
-        blocksEl(t.additions, t.deletions),
-      );
+      if (t.additions) summary.append(el('span', `${NS}-add`, `+${L.formatCount(t.additions)}`));
+      if (t.deletions) summary.append(el('span', `${NS}-del`, `−${L.formatCount(t.deletions)}`));
+      summary.append(blocksEl(t.additions, t.deletions));
     }
     inline.append(summary);
     if (!inline.open) return;
@@ -550,6 +561,8 @@
       const t = L.heat(L.churn(node), maxFile, settings.scale).toFixed(3);
       if (!header.classList.contains(`${NS}-file-heat`)) header.classList.add(`${NS}-file-heat`);
       if (header.style.getPropertyValue('--locdiff-heat') !== t) header.style.setProperty('--locdiff-heat', t);
+      const r = addShare(node);
+      if (header.style.getPropertyValue('--locdiff-add') !== r) header.style.setProperty('--locdiff-add', r);
     }
   }
 
@@ -577,7 +590,8 @@
       bar.children[0].style.width = `${addW}%`;
       bar.children[1].style.width = `${delW}%`;
       const stats = el('span', `${NS}-hot-stats`);
-      stats.append(el('span', `${NS}-add`, `+${L.formatCount(n.additions)}`), el('span', `${NS}-del`, `−${L.formatCount(n.deletions)}`));
+      if (n.additions) stats.append(el('span', `${NS}-add`, `+${L.formatCount(n.additions)}`));
+      if (n.deletions) stats.append(el('span', `${NS}-del`, `−${L.formatCount(n.deletions)}`));
       li.append(name, stats, bar);
       list.append(li);
     }

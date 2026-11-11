@@ -45,13 +45,13 @@ const sha = (s) => crypto.createHash('sha256').update(s).digest('hex');
     const b = row.querySelector('.locdiff-badge');
     if (b && !b.offsetParent) return { label: 'HIDDEN BADGE', badge: null, heat: '' };
     const label = row.querySelector('.ActionList-item-label, .PRIVATE_TreeView-item-content-text, [class*="TreeViewItemContentText"]');
-    return { label: label.firstChild.textContent.trim(), badge: b ? b.textContent : null, heat: row.style.getPropertyValue('--locdiff-heat') };
+    return { label: label.firstChild.textContent.trim(), badge: b ? [...b.children].filter((c) => !c.hidden).map((c) => c.textContent).join('') : null, add: row.style.getPropertyValue('--locdiff-add'), heat: row.style.getPropertyValue('--locdiff-heat') };
   }));
   console.table(badges);
 
   const expect = {
     src: '+122−31', 'lib/util': '+120−30', 'math.js': '+120−30', 'app.js': '+2−1',
-    'README.md': '+1−0', 'guide.md': '+9−0', docs: '+9−0', 'src/lib/util': '+120−30',
+    'README.md': '+1', 'guide.md': '+9', docs: '+9', 'src/lib/util': '+120−30',
   };
   let fail = 0;
   for (const b of badges) {
