@@ -1,0 +1,46 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>GitHub Inline LOC Diff</title>
+  <style>
+    :root { color-scheme: light dark; font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    body { margin: 16px; min-width: 380px; }
+    fieldset { border: 1px solid #8884; border-radius: 8px; margin: 0 0 12px; padding: 8px 12px 12px; }
+    legend { font-weight: 600; padding: 0 4px; }
+    label { display: block; margin: 6px 0; }
+    input[type=password] { width: 100%; box-sizing: border-box; padding: 6px; font-family: ui-monospace, monospace; }
+    small { color: #888; display: block; }
+    #status { color: #1a7f37; min-height: 1.5em; }
+  </style>
+</head>
+<body>
+  <fieldset>
+    <legend>Display</legend>
+    <label><input type="checkbox" id="badges"> Show +/− counts in the file tree</label>
+    <label><input type="checkbox" id="heatmap"> Heatmap colouring in the file tree</label>
+    <label>Heatmap style
+      <select id="heatStyle">
+        <option value="tint">Tint (colour intensity)</option>
+        <option value="bar">Bar (width ∝ churn)</option>
+      </select>
+    </label>
+    <label>Scale
+      <select id="scale">
+        <option value="log">Logarithmic (recommended)</option>
+        <option value="linear">Linear</option>
+      </select>
+    </label>
+    <label><input type="checkbox" id="panelButton"> Show floating heatmap button (Alt+Shift+H)</label>
+  </fieldset>
+  <fieldset>
+    <legend>GitHub token (optional)</legend>
+    <input type="password" id="token" placeholder="github_pat_… or ghp_…" autocomplete="off">
+    <small>By default the extension reads the <code>.diff</code> of the page using your github.com session.
+      A token (read-only “Pull requests” + “Contents” is enough) switches to the REST API, which helps with very large diffs.
+      It is stored in Chrome sync storage and only sent to api.github.com.</small>
+  </fieldset>
+  <div id="status"></div>
+  <script src="options.js"></script>
+</body>
+</html>

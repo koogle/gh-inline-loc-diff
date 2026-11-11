@@ -1,0 +1,12 @@
+{
+  "name": "gh-inline-loc-diff",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Chrome extension: inline +/- line counts and a churn heatmap for GitHub's diff file tree.",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "test:e2e": "node tests/e2e.js",
+    "zip": "rm -f gh-inline-loc-diff.zip && zip -r gh-inline-loc-diff.zip manifest.json src icons"
+  },
+  "license": "MIT"
+}

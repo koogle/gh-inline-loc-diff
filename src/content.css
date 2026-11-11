@@ -1,0 +1,166 @@
+/* ---------- inline badge in the file tree ---------- */
+.locdiff-badge {
+  grid-area: trailingVisual;
+  display: inline-flex;
+  gap: 4px;
+  margin-left: auto;
+  padding-left: 6px;
+  flex-shrink: 0;
+  align-self: center;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 500;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  pointer-events: auto;
+}
+.locdiff-add { color: var(--fgColor-success, var(--color-success-fg, #1a7f37)); }
+.locdiff-del { color: var(--fgColor-danger, var(--color-danger-fg, #d1242f)); }
+
+/* ---------- heatmap on tree rows ---------- */
+.locdiff-heat {
+  --locdiff-heat: 0;
+  --locdiff-heat-color: hsl(calc(52 - var(--locdiff-heat) * 52) 95% 52%);
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--locdiff-heat-color) calc(8% + var(--locdiff-heat) * 34%), transparent) 0 100%
+  ) !important;
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--locdiff-heat-color) calc(25% + var(--locdiff-heat) * 75%), transparent);
+}
+.locdiff-heat.locdiff-heat--dir {
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--locdiff-heat-color) calc(4% + var(--locdiff-heat) * 18%), transparent) 0 100%
+  ) !important;
+}
+.locdiff-heat.locdiff-heat--bar,
+.locdiff-heat.locdiff-heat--bar.locdiff-heat--dir {
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--locdiff-heat-color) 38%, transparent) 0 calc(var(--locdiff-heat) * 100%),
+    transparent calc(var(--locdiff-heat) * 100%)
+  ) !important;
+}
+
+/* ---------- floating button ---------- */
+.locdiff-fab {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 2147483000;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--borderColor-default, var(--color-border-default, #d0d7de));
+  background: var(--bgColor-default, var(--color-canvas-default, #fff));
+  color: var(--fgColor-default, var(--color-fg-default, #1f2328));
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
+  font: 500 12px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  cursor: pointer;
+}
+.locdiff-fab:hover { background: var(--bgColor-muted, var(--color-canvas-subtle, #f6f8fa)); }
+.locdiff-fab--error { color: var(--fgColor-danger, #d1242f); }
+
+/* ---------- panel ---------- */
+.locdiff-panel {
+  position: fixed;
+  right: 16px;
+  bottom: 56px;
+  z-index: 2147483001;
+  width: min(480px, calc(100vw - 32px));
+  max-height: calc(100vh - 88px);
+  overflow: auto;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--borderColor-default, var(--color-border-default, #d0d7de));
+  background: var(--bgColor-default, var(--color-canvas-default, #fff));
+  color: var(--fgColor-default, var(--color-fg-default, #1f2328));
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
+  font: 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+.locdiff-panel * { box-sizing: border-box; }
+.locdiff-panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; font-size: 14px; }
+.locdiff-icon-btn { border: 0; background: none; color: inherit; font-size: 20px; line-height: 1; cursor: pointer; padding: 0 4px; }
+.locdiff-muted { color: var(--fgColor-muted, var(--color-fg-muted, #59636e)); }
+.locdiff-error { color: var(--fgColor-danger, #d1242f); word-break: break-word; }
+.locdiff-btn {
+  padding: 4px 12px; border-radius: 6px; cursor: pointer; color: inherit;
+  border: 1px solid var(--borderColor-default, #d0d7de);
+  background: var(--bgColor-muted, #f6f8fa);
+}
+.locdiff-summary { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.locdiff-summary .locdiff-muted { font-weight: 400; }
+.locdiff-blocks { display: inline-flex; gap: 1px; }
+.locdiff-block { width: 8px; height: 8px; border-radius: 1px; background: var(--bgColor-neutral-muted, #d1d9e0); }
+.locdiff-block--add { background: var(--bgColor-success-emphasis, #1f883d); }
+.locdiff-block--del { background: var(--bgColor-danger-emphasis, #cf222e); }
+
+.locdiff-seg { display: inline-flex; margin-bottom: 8px; border: 1px solid var(--borderColor-default, #d0d7de); border-radius: 6px; overflow: hidden; }
+.locdiff-seg button { border: 0; background: none; color: inherit; padding: 3px 10px; font-size: 12px; cursor: pointer; }
+.locdiff-seg button + button { border-left: 1px solid var(--borderColor-default, #d0d7de); }
+.locdiff-seg button.is-active { background: var(--bgColor-accent-muted, rgba(84, 174, 255, 0.25)); font-weight: 600; }
+
+.locdiff-treemap {
+  position: relative;
+  width: 100%;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--bgColor-muted, #f6f8fa);
+}
+.locdiff-tm-dir {
+  position: absolute;
+  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+  border-radius: 3px;
+  pointer-events: none;
+}
+.locdiff-tm-dir-label {
+  display: block;
+  padding: 0 4px;
+  font-size: 10px;
+  line-height: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--fgColor-muted, #59636e);
+}
+.locdiff-tm-file {
+  position: absolute;
+  margin: 0;
+  padding: 1px 3px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 2px;
+  color: #1f2328;
+  font: 10px/12px ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-align: left;
+  vertical-align: top;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  display: block;
+}
+.locdiff-tm-file:hover { outline: 2px solid var(--fgColor-accent, #0969da); outline-offset: -2px; z-index: 1; }
+.locdiff-tm-file--dark { color: #fff; }
+
+.locdiff-hot h4 { margin: 12px 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--fgColor-muted, #59636e); }
+.locdiff-hot ol { list-style: none; margin: 0; padding: 0; }
+.locdiff-hot li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "name stats" "bar bar";
+  column-gap: 8px;
+  padding: 3px 0;
+}
+.locdiff-hot-name {
+  grid-area: name; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left;
+  font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; border: 0; background: none; color: inherit; padding: 0;
+}
+button.locdiff-hot-name { cursor: pointer; }
+button.locdiff-hot-name:hover { color: var(--fgColor-accent, #0969da); text-decoration: underline; }
+.locdiff-hot-stats { grid-area: stats; display: inline-flex; gap: 6px; font: 12px ui-monospace, Menlo, monospace; }
+.locdiff-hot-bar { grid-area: bar; display: flex; height: 4px; margin-top: 2px; border-radius: 2px; overflow: hidden; background: var(--bgColor-muted, #f6f8fa); }
+.locdiff-hot-bar-add { background: var(--bgColor-success-emphasis, #1f883d); }
+.locdiff-hot-bar-del { background: var(--bgColor-danger-emphasis, #cf222e); }
+.locdiff-foot { margin: 10px 0 0; font-size: 11px; }

@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "GitHub Inline LOC Diff",
+  "version": "0.1.0",
+  "description": "Shows +/- line counts for every file and folder in GitHub's diff file tree, plus a churn heatmap of the change.",
+  "icons": { "16": "icons/icon16.png", "48": "icons/icon48.png", "128": "icons/icon128.png" },
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://github.com/*",
+    "https://patch-diff.githubusercontent.com/*",
+    "https://api.github.com/*"
+  ],
+  "background": { "service_worker": "src/background.js" },
+  "content_scripts": [
+    {
+      "matches": ["https://github.com/*"],
+      "js": ["src/diffstat.js", "src/content.js"],
+      "css": ["src/content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "options_ui": { "page": "src/options.html", "open_in_tab": false },
+  "action": { "default_title": "GitHub Inline LOC Diff — options", "default_icon": { "16": "icons/icon16.png", "48": "icons/icon48.png" } }
+}

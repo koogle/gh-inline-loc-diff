@@ -1,0 +1,60 @@
+<!doctype html>
+<html data-color-mode="light">
+<head><meta charset="utf-8"><title>Mock PR files</title>
+<style>
+  body { font: 14px -apple-system, sans-serif; display: flex; gap: 24px; padding: 16px; }
+  .tree { width: 300px; }
+  ul { list-style: none; padding-left: 14px; margin: 0; }
+  .ActionList-content { display: grid; grid-template-columns: min-content minmax(0, auto) min-content;
+    grid-template-areas: "leadingVisual label trailingVisual"; padding: 4px 8px; border-radius: 6px; color: inherit; text-decoration: none; width: 100%; border: 0; background: none; text-align: left; font: inherit; }
+  .ActionList-item-label { grid-area: label; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .PRIVATE_TreeView-item-content { display: flex; padding: 4px 8px; }
+  .PRIVATE_TreeView-item-content-text { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+</style></head>
+<body>
+<!-- Classic PR "Files changed" tree (hash anchors) -->
+<div class="tree"><h3>classic</h3>
+<file-tree>
+<ul class="ActionList" role="tree">
+  <li role="treeitem" aria-expanded="true" data-tree-entry-type="directory" class="ActionList-item">
+    <button class="ActionList-content"><span class="ActionList-item-label">src</span></button>
+    <ul role="group">
+      <li role="treeitem" aria-expanded="true" data-tree-entry-type="directory">
+        <button class="ActionList-content"><span class="ActionList-item-label">lib/util</span></button>
+        <ul role="group">
+          <li id="file-tree-item-diff-HASH_src/lib/util/math.js" role="treeitem" data-tree-entry-type="file">
+            <a class="ActionList-content" href="#diff-HASH_src/lib/util/math.js"><span class="ActionList-item-label">math.js</span></a>
+          </li>
+        </ul>
+      </li>
+      <li role="treeitem" data-tree-entry-type="file">
+        <a class="ActionList-content" href="#diff-HASH_src/app.js"><span class="ActionList-item-label">app.js</span></a>
+      </li>
+    </ul>
+  </li>
+  <li role="treeitem" data-tree-entry-type="file">
+    <a class="ActionList-content" href="#diff-HASH_README.md"><span class="ActionList-item-label">README.md</span></a>
+  </li>
+</ul>
+</file-tree></div>
+
+<!-- React TreeView style (no hash anchors; path from nesting) -->
+<div class="tree"><h3>react</h3>
+<ul role="tree" aria-label="File Tree">
+  <li role="treeitem" aria-expanded="true" aria-level="1">
+    <div class="PRIVATE_TreeView-item-container"><div class="PRIVATE_TreeView-item-content"><span class="PRIVATE_TreeView-item-content-text"><span>src</span></span></div></div>
+    <ul role="group">
+      <li role="treeitem" aria-expanded="false" aria-level="2">
+        <div class="PRIVATE_TreeView-item-container"><div class="PRIVATE_TreeView-item-content"><span class="PRIVATE_TreeView-item-content-text"><span>lib/util</span></span></div></div>
+      </li>
+      <li role="treeitem" aria-level="2">
+        <div class="PRIVATE_TreeView-item-container"><div class="PRIVATE_TreeView-item-content"><span class="PRIVATE_TreeView-item-content-text"><span>app.js</span></span></div></div>
+      </li>
+    </ul>
+  </li>
+  <li role="treeitem" aria-level="1" id="docs/guide.md">
+    <div class="PRIVATE_TreeView-item-container"><div class="PRIVATE_TreeView-item-content"><span class="PRIVATE_TreeView-item-content-text"><span>guide.md</span></span></div></div>
+  </li>
+</ul></div>
+<div id="diffs"></div>
+</body></html>
