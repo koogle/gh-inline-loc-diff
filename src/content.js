@@ -9,7 +9,7 @@
   globalThis.__locdiffLoaded = true;
 
   const NS = 'locdiff';
-  const DEFAULTS = { badges: true, heatmap: true, heatStyle: 'tint', scale: 'log', panelButton: true };
+  const DEFAULTS = { badges: true, heatmap: true, heatStyle: 'tint', scale: 'log', panelButton: true, inlineHeatmap: true };
 
   let settings = { ...DEFAULTS };
   let state = freshState(null);
@@ -96,7 +96,23 @@
     '.PRIVATE_TreeView-item-content-text',
     '[class*="TreeView-item-content-text"]',
     '[class*="TreeView-module__TreeViewItemContentText"]',
+    '[class*="TreeViewItemContentText"]',
+    '[class*="TreeView-item-content"] > span:not([class*="visual" i]):not([aria-hidden])',
   ].join(',');
+
+  // Flat (virtualised) trees put every item side by side and express nesting via aria-level.
+  let levelParent = new WeakMap();
+  function indexLevels(items) {
+    levelParent = new WeakMap();
+    const stack = [];
+    for (const li of items) {
+      const level = parseInt(li.getAttribute('aria-level'), 10);
+      if (!level) continue;
+      stack.length = level - 1;
+      if (level > 1 && stack[level - 2]) levelParent.set(li, stack[level - 2]);
+      stack[level - 1] = li;
+    }
+  }
 
   /** The row element of a tree item (excludes its nested sub-tree). */
   function rowOf(li) {
@@ -143,7 +159,8 @@
 
   function parentItem(li) {
     const p = li.parentElement && li.parentElement.closest('[role="treeitem"]');
-    return p && p !== li ? p : null;
+    if (p && p !== li) return p;
+    return levelParent.get(li) || null;
   }
 
   function ancestryPath(li) {
@@ -203,6 +220,11 @@
       const p = ancestryPath(li);
       node = lookup(p, dir) || (p && suffixLookup(p, dir));
     }
+    if (!node) {
+      // Last resort: the bare label, if it names exactly one changed file/folder.
+      const label = labelOf(li);
+      if (label) node = suffixLookup(label, dir);
+    }
     resolveCache.set(li, { sig, node });
     return node;
   }
@@ -224,11 +246,14 @@
     const items = document.querySelectorAll('file-tree [role="treeitem"], [role="tree"] [role="treeitem"]');
     const { maxFile, maxDir } = state.model;
     pathToItem = new Map();
+    indexLevels(items);
+    let resolved = 0;
     for (const li of items) {
       const node = resolveItem(li);
       const row = rowOf(li);
       if (!node) { undecorate(li, row); continue; }
-      if (!node.isDir) pathToItem.set(node.path, li);
+      resolved++;
+      if (!node.isDir && !pathToItem.has(node.path)) pathToItem.set(node.path, li);
 
       // --- badge
       const labelEl = labelElOf(row);
@@ -264,7 +289,14 @@
         clearHeat(row);
       }
     }
+    // Diagnostics for when GitHub changes its markup: shows in the page's DevTools console.
+    const diag = `${items.length}/${resolved}`;
+    if (diag !== lastDiag) {
+      lastDiag = diag;
+      console.debug(`[gh-inline-loc-diff] file tree items: ${items.length}, matched to changed files/folders: ${resolved}, changed files: ${state.model.files.size}`);
+    }
   }
+  let lastDiag = '';
 
   function clearHeat(row) {
     row.classList.remove(`${NS}-heat`, `${NS}-heat--bar`, `${NS}-heat--dir`);
@@ -280,6 +312,10 @@
   function undecorateAll() {
     document.querySelectorAll(`.${NS}-badge`).forEach((b) => b.remove());
     document.querySelectorAll(`.${NS}-heat`).forEach(clearHeat);
+    document.querySelectorAll(`.${NS}-file-heat`).forEach((h) => {
+      h.classList.remove(`${NS}-file-heat`);
+      h.style.removeProperty('--locdiff-heat');
+    });
   }
 
   /* ------------------------------------------------------------------ floating button + panel */
@@ -288,7 +324,7 @@
   let panel = null;
 
   function renderButton() {
-    const active = !!state.key && settings.panelButton;
+    const active = !!state.key && settings.panelButton && !(inline && inline.isConnected);
     if (!active) { if (button) { button.remove(); button = null; } return; }
     if (!button) {
       button = el('button', `${NS}-fab`);
@@ -345,6 +381,7 @@
   }
 
   function renderPanel() {
+    renderInline();
     if (!panel) return;
     panel.textContent = '';
     const header = el('div', `${NS}-panel-header`);
@@ -355,13 +392,17 @@
     close.addEventListener('click', togglePanel);
     header.append(close);
     panel.append(header);
+    fillHeatmap(panel, { compact: false });
+  }
 
+  /** Render summary, treemap and hotspot lists into `box`. */
+  function fillHeatmap(box, { compact }) {
     if (state.status === 'loading' || state.status === 'idle') {
-      panel.append(el('p', `${NS}-muted`, 'Loading line stats…'));
+      box.append(el('p', `${NS}-muted`, 'Loading line stats…'));
       return;
     }
     if (state.status === 'error') {
-      panel.append(el('p', `${NS}-error`, state.error));
+      box.append(el('p', `${NS}-error`, state.error));
       const p = el('p', `${NS}-muted`, 'For private repositories or API rate limits, add a GitHub token in the ');
       const a = el('a', null, 'extension options');
       a.href = '#';
@@ -370,19 +411,21 @@
       const retry = el('button', `${NS}-btn`, 'Retry');
       retry.type = 'button';
       retry.addEventListener('click', () => load(state.info, true));
-      panel.append(p, retry);
+      box.append(p, retry);
       return;
     }
 
     const { totals, root, maxFile } = state.model;
-    const summary = el('div', `${NS}-summary`);
-    summary.append(
-      el('span', `${NS}-add`, `+${totals.additions.toLocaleString()}`),
-      el('span', `${NS}-del`, `−${totals.deletions.toLocaleString()}`),
-      el('span', `${NS}-muted`, `in ${totals.files.toLocaleString()} file${totals.files === 1 ? '' : 's'}`),
-      blocksEl(totals.additions, totals.deletions),
-    );
-    panel.append(summary);
+    if (!compact) {
+      const summary = el('div', `${NS}-summary`);
+      summary.append(
+        el('span', `${NS}-add`, `+${totals.additions.toLocaleString()}`),
+        el('span', `${NS}-del`, `−${totals.deletions.toLocaleString()}`),
+        el('span', `${NS}-muted`, `in ${totals.files.toLocaleString()} file${totals.files === 1 ? '' : 's'}`),
+        blocksEl(totals.additions, totals.deletions),
+      );
+      box.append(summary);
+    }
 
     // color-mode toggle
     const modes = el('div', `${NS}-seg`);
@@ -392,13 +435,13 @@
       b.addEventListener('click', () => { panelColorMode = mode; renderPanel(); });
       modes.append(b);
     }
-    panel.append(modes);
+    box.append(modes);
 
     // treemap
     const map = el('div', `${NS}-treemap`);
-    panel.append(map);
-    const W = map.clientWidth || 440;
-    const H = 320;
+    box.append(map);
+    const W = map.clientWidth || (compact ? 280 : 440);
+    const H = compact ? Math.round(Math.min(220, Math.max(140, W * 0.6))) : 320;
     map.style.height = `${H}px`;
     drawTreemap(map, root, 0, 0, W, H, 0, maxFile);
 
@@ -407,9 +450,96 @@
     const dirs = [...state.model.dirs.values()].filter((d) => d !== root
       && !(d.children.size === 1 && d.children.values().next().value.isDir));
     const files = [...state.model.files.values()];
-    panel.append(hotList('Hottest directories', dirs, false));
-    panel.append(hotList('Hottest files', files, true));
-    panel.append(el('p', `${NS}-muted ${NS}-foot`, `Source: ${state.source === 'api' ? 'GitHub REST API' : '.diff'} · Alt+Shift+H toggles this panel`));
+    const n = compact ? 5 : 8;
+    box.append(hotList('Hottest directories', dirs, false, n));
+    box.append(hotList('Hottest files', files, true, n));
+    if (!compact) {
+      box.append(el('p', `${NS}-muted ${NS}-foot`, `Source: ${state.source === 'api' ? 'GitHub REST API' : '.diff'} · Alt+Shift+H toggles this panel`));
+    }
+  }
+
+  /* ------------------------------------------------------------------ inline section in the diff view */
+
+  let inline = null; // <details> placed above GitHub's file tree
+  let inlineOpen = false; // collapsed by default so the file list stays on top
+  let inlineWidth = 0;
+  const inlineResize = new ResizeObserver(() => {
+    if (inline && inline.open && Math.abs(inline.clientWidth - inlineWidth) > 8) renderInline();
+  });
+
+  function fileTreeHost() {
+    for (const li of pathToItem.values()) {
+      if (!li.isConnected) continue;
+      const tree = li.closest('file-tree') || li.closest('[role="tree"]');
+      if (tree && tree.parentElement) return tree;
+    }
+    return null;
+  }
+
+  /** Make sure the heatmap section sits right above the file tree. Returns true if placed. */
+  function ensureInline() {
+    const host = settings.inlineHeatmap && state.status === 'ready' ? fileTreeHost() : null;
+    if (!host) {
+      if (inline) { inline.remove(); inline = null; inlineResize.disconnect(); }
+      return false;
+    }
+    if (!inline) {
+      inline = el('details', `${NS}-inline`);
+      inline.open = inlineOpen;
+      inline.addEventListener('toggle', () => { inlineOpen = inline.open; try { chrome.storage.local.set({ inlineOpen }); } catch (_) { /* ignore */ } renderInline(); });
+      inlineResize.observe(inline);
+    }
+    if (host.previousElementSibling !== inline) {
+      host.before(inline);
+      renderInline();
+    }
+    return true;
+  }
+
+  function renderInline() {
+    if (!inline || !inline.isConnected) return;
+    inline.textContent = '';
+    const summary = el('summary', `${NS}-inline-summary`);
+    summary.append(el('span', `${NS}-inline-title`, 'Change heatmap'));
+    if (state.status === 'ready') {
+      const t = state.model.totals;
+      summary.append(
+        el('span', `${NS}-add`, `+${L.formatCount(t.additions)}`),
+        el('span', `${NS}-del`, `−${L.formatCount(t.deletions)}`),
+        blocksEl(t.additions, t.deletions),
+      );
+    }
+    inline.append(summary);
+    if (!inline.open) return;
+    const body = el('div', `${NS}-inline-body`);
+    inline.append(body);
+    fillHeatmap(body, { compact: true });
+    inlineWidth = inline.clientWidth;
+  }
+
+  /* ------------------------------------------------------------------ heat stripe on diff file headers */
+
+  function decorateDiffHeaders() {
+    const { maxFile } = state.model;
+    for (const [path, hash] of state.pathToHash) {
+      const file = document.getElementById(`diff-${hash}`)
+        || document.querySelector(`.file[data-tagsearch-path="${CSS.escape(path)}"]`);
+      if (!file) continue;
+      const header = file.querySelector('.file-header, [class*="DiffFileHeader"], [class*="diff-file-header"]')
+        || file.firstElementChild;
+      if (!header) continue;
+      if (!settings.heatmap) {
+        if (header.classList.contains(`${NS}-file-heat`)) {
+          header.classList.remove(`${NS}-file-heat`);
+          header.style.removeProperty('--locdiff-heat');
+        }
+        continue;
+      }
+      const node = state.model.files.get(path);
+      const t = L.heat(L.churn(node), maxFile, settings.scale).toFixed(3);
+      if (!header.classList.contains(`${NS}-file-heat`)) header.classList.add(`${NS}-file-heat`);
+      if (header.style.getPropertyValue('--locdiff-heat') !== t) header.style.setProperty('--locdiff-heat', t);
+    }
   }
 
   function blocksEl(a, d) {
@@ -418,10 +548,10 @@
     return wrap;
   }
 
-  function hotList(title, nodes, clickable) {
+  function hotList(title, nodes, clickable, n) {
     const section = el('div', `${NS}-hot`);
     section.append(el('h4', null, title));
-    const top = nodes.filter((n) => L.churn(n) > 0).sort((a, b) => L.churn(b) - L.churn(a)).slice(0, 8);
+    const top = nodes.filter((n) => L.churn(n) > 0).sort((a, b) => L.churn(b) - L.churn(a)).slice(0, n || 8);
     const max = top.length ? L.churn(top[0]) : 1;
     const list = el('ol');
     for (const n of top) {
@@ -494,15 +624,17 @@
     if (key !== state.key) {
       undecorateAll();
       if (panel) { panel.remove(); panel = null; }
+      if (inline) { inline.remove(); inline = null; inlineResize.disconnect(); }
       state = freshState(key);
       resolveCache = new WeakMap();
       if (info) load(info);
     }
+    observer.disconnect();
+    try {
+      if (state.status === 'ready') { decorate(); decorateDiffHeaders(); }
+      ensureInline();
+    } finally { observe(); }
     renderButton();
-    if (state.status === 'ready') {
-      observer.disconnect();
-      try { decorate(); } finally { observe(); }
-    }
   }
 
   function schedule() {
@@ -514,7 +646,7 @@
   const observer = new MutationObserver((mutations) => {
     for (const m of mutations) {
       const t = m.target;
-      if (t.nodeType === 1 && t.closest && t.closest(`.${NS}-panel, .${NS}-fab, .${NS}-badge`)) continue;
+      if (t.nodeType === 1 && t.closest && t.closest(`.${NS}-panel, .${NS}-fab, .${NS}-badge, .${NS}-inline`)) continue;
       schedule();
       return;
     }
@@ -526,7 +658,10 @@
   document.addEventListener('keydown', (e) => {
     if (e.altKey && e.shiftKey && (e.key === 'H' || e.key === 'h' || e.code === 'KeyH') && state.key) {
       e.preventDefault();
-      togglePanel();
+      if (inline && inline.isConnected) {
+        inline.open = !inline.open;
+        if (inline.open) inline.scrollIntoView({ block: 'nearest' });
+      } else togglePanel();
     } else if (e.key === 'Escape' && panel) {
       togglePanel();
     }
@@ -536,6 +671,12 @@
     document.addEventListener(ev, schedule);
   }
 
+  try {
+    chrome.storage.local.get({ inlineOpen: false }, (v) => {
+      inlineOpen = v.inlineOpen === true;
+      if (inline) inline.open = inlineOpen;
+    });
+  } catch (_) { /* ignore */ }
   chrome.storage.sync.get(DEFAULTS, (s) => {
     settings = { ...DEFAULTS, ...s };
     observe();

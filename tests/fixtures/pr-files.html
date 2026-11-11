@@ -2,18 +2,20 @@
 <html data-color-mode="light">
 <head><meta charset="utf-8"><title>Mock PR files</title>
 <style>
-  body { font: 14px -apple-system, sans-serif; display: flex; gap: 24px; padding: 16px; }
+  body { font: 14px -apple-system, sans-serif; display: flex; gap: 16px; padding: 16px; }
+  .tree { width: 230px; flex: none; }
   .tree { width: 300px; }
   ul { list-style: none; padding-left: 14px; margin: 0; }
   .ActionList-content { display: grid; grid-template-columns: min-content minmax(0, auto) min-content;
     grid-template-areas: "leadingVisual label trailingVisual"; padding: 4px 8px; border-radius: 6px; color: inherit; text-decoration: none; width: 100%; border: 0; background: none; text-align: left; font: inherit; }
   .ActionList-item-label { grid-area: label; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  [class*="TreeViewItemContent-"] { display: flex; padding: 4px 8px; }
   .PRIVATE_TreeView-item-content { display: flex; padding: 4px 8px; }
   .PRIVATE_TreeView-item-content-text { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 </style></head>
 <body>
 <!-- Classic PR "Files changed" tree (hash anchors) -->
-<div class="tree"><h3>classic</h3>
+<div class="tree" style="width:300px"><h3>classic</h3>
 <file-tree>
 <ul class="ActionList" role="tree">
   <li role="treeitem" aria-expanded="true" data-tree-entry-type="directory" class="ActionList-item">
@@ -56,5 +58,18 @@
     <div class="PRIVATE_TreeView-item-container"><div class="PRIVATE_TreeView-item-content"><span class="PRIVATE_TreeView-item-content-text"><span>guide.md</span></span></div></div>
   </li>
 </ul></div>
-<div id="diffs"></div>
+
+<!-- Flat/virtualised tree with CSS-module class names, nesting via aria-level only -->
+<div class="tree"><h3>flat</h3>
+<ul role="tree" aria-label="Files">
+  <li role="treeitem" aria-level="1" aria-expanded="true"><div class="prc-TreeView-TreeViewItemContainer-x1"><div class="prc-TreeView-TreeViewItemContent-x2"><span class="prc-TreeView-TreeViewItemContentText-x3">docs</span></div></div></li>
+  <li role="treeitem" aria-level="2"><div class="prc-TreeView-TreeViewItemContainer-x1"><div class="prc-TreeView-TreeViewItemContent-x2"><span class="prc-TreeView-TreeViewItemContentText-x3">guide.md</span></div></div></li>
+  <li role="treeitem" aria-level="1" aria-expanded="true"><div class="prc-TreeView-TreeViewItemContainer-x1"><div class="prc-TreeView-TreeViewItemContent-x2"><span class="prc-TreeView-TreeViewItemContentText-x3">src/lib/util</span></div></div></li>
+  <li role="treeitem" aria-level="2"><div class="prc-TreeView-TreeViewItemContainer-x1"><div class="prc-TreeView-TreeViewItemContent-x2"><span class="prc-TreeView-TreeViewItemContentText-x3">math.js</span></div></div></li>
+</ul></div>
+<div id="diffs" style="flex:1">
+  <div class="file" id="diff-HASH_src/lib/util/math.js" data-tagsearch-path="src/lib/util/math.js"><div class="file-header" style="padding:8px;border:1px solid #d0d7de">src/lib/util/math.js</div><pre>…</pre></div>
+  <div class="file" id="diff-HASH_src/app.js" data-tagsearch-path="src/app.js"><div class="file-header" style="padding:8px;border:1px solid #d0d7de">src/app.js</div><pre>…</pre></div>
+  <div class="file" id="diff-HASH_README.md" data-tagsearch-path="README.md"><div class="file-header" style="padding:8px;border:1px solid #d0d7de">README.md</div><pre>…</pre></div>
+</div>
 </body></html>

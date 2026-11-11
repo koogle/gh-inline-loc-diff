@@ -164,3 +164,48 @@ button.locdiff-hot-name:hover { color: var(--fgColor-accent, #0969da); text-deco
 .locdiff-hot-bar-add { background: var(--bgColor-success-emphasis, #1f883d); }
 .locdiff-hot-bar-del { background: var(--bgColor-danger-emphasis, #cf222e); }
 .locdiff-foot { margin: 10px 0 0; font-size: 11px; }
+
+/* ---------- heatmap section embedded above GitHub's file tree ---------- */
+.locdiff-inline {
+  margin: 0 0 8px;
+  border: 1px solid var(--borderColor-default, var(--color-border-default, #d0d7de));
+  border-radius: 6px;
+  background: var(--bgColor-default, var(--color-canvas-default, #fff));
+  color: var(--fgColor-default, var(--color-fg-default, #1f2328));
+  font-size: 12px;
+  line-height: 1.45;
+}
+.locdiff-inline * { box-sizing: border-box; }
+.locdiff-inline-summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  list-style: none;
+  user-select: none;
+}
+.locdiff-inline-summary::-webkit-details-marker { display: none; }
+.locdiff-inline-summary::before {
+  content: "";
+  width: 0; height: 0;
+  border-left: 4px solid currentColor;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  transition: transform .12s;
+  opacity: .7;
+}
+.locdiff-inline[open] > .locdiff-inline-summary::before { transform: rotate(90deg); }
+.locdiff-inline-title { margin-right: auto; }
+.locdiff-inline-body { padding: 0 8px 8px; }
+.locdiff-inline .locdiff-hot h4 { margin-top: 8px; font-size: 11px; }
+.locdiff-inline .locdiff-hot-name, .locdiff-inline .locdiff-hot-stats { font-size: 11px; }
+.locdiff-inline .locdiff-seg button { padding: 2px 8px; font-size: 11px; }
+
+/* ---------- heat stripe on each diff's file header ---------- */
+.locdiff-file-heat {
+  --locdiff-heat: 0;
+  box-shadow: inset 4px 0 0 hsl(calc(52 - var(--locdiff-heat) * 52) 95% 52% / calc(.3 + var(--locdiff-heat) * .7)) !important;
+}

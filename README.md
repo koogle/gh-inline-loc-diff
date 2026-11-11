@@ -4,7 +4,8 @@ A Chrome extension (Manifest V3) for GitHub's diff views (pull request **Files c
 
 - **Inline line counts in the file-tree sidebar**: every file shows `+added −deleted`. Every folder shows the total for everything under it, so you can see where the change went without expanding folders.
 - **A heatmap in the sidebar**: rows are tinted from pale yellow to deep red by churn (additions + deletions), so the hottest parts of the change stand out. Files and folders are scaled separately.
-- **A treemap panel** (floating button in the bottom-right corner, or <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>H</kbd>). It shows the whole change as a nested treemap where area = churn and colour = heat, or added-vs-deleted ratio. Below it are the hottest directories and files. Click a file to jump to its diff.
+- **A heat stripe on each diff's file header**, in the same colour scale.
+- **A treemap section embedded in the diff view**, just above the file tree. It starts collapsed as a one-line `+A −D` summary; click it or press <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>H</kbd> to expand it. It shows the whole change as a nested treemap where area = churn and colour = heat, or added-vs-deleted ratio. Below it are the hottest directories and files. Click a file to jump to its diff. When the file tree is hidden, a floating button in the bottom-right corner opens the same view.
 
 ## Install (unpacked)
 
@@ -41,4 +42,6 @@ node tests/e2e.js out.png  # loads the unpacked extension in Chromium against a 
 
 `tests/e2e.js` needs Playwright with a full Chromium build, because headless-shell can't load extensions.
 
-GitHub changes its DOM often. If badges stop showing up, the selectors to check are `LABEL_SELECTORS` and `rowOf()` in `src/content.js`.
+GitHub changes its DOM often. If badges stop showing up, open DevTools on the PR page. The console (verbose level) logs `[gh-inline-loc-diff] file tree items: N, matched …`.
+- `items: 0` means the tree selector in `decorate()` needs updating.
+- Items found but none matched means `LABEL_SELECTORS`, `rowOf()` or `resolveItem()` in `src/content.js` need updating.

@@ -1,4 +1,4 @@
-const DEFAULTS = { badges: true, heatmap: true, heatStyle: 'tint', scale: 'log', panelButton: true, token: '' };
+const DEFAULTS = { badges: true, heatmap: true, heatStyle: 'tint', scale: 'log', panelButton: true, inlineHeatmap: true, token: '' };
 const $ = (id) => document.getElementById(id);
 let timer;
 
